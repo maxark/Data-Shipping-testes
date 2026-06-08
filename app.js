@@ -2,7 +2,7 @@ const GIST_ID = "9a5dfdcbdbc0a111fad07198c7066368";
 const p1 = "ghp_"; 
 const p2 = "nUNSCqQ8nHZHxX"; 
 const p3 = "jw5SFCunZuu2IHPF3hI2kJ";
-const CSV_PLANILHA_TOBOGAS = "https://docs.google.com/spreadsheets/d/1wRtBiDY1U9gOeRE_15mg8iKKVQE2wBnRX9Jb69fMUvE/pub?output=csv"; // Altere para o link publicado
+const CSV_PLANILHA_TOBOGAS = "https://docs.google.com/spreadsheets/d/1wRtBiDY1U9gOeRE_15mg8iKKVQE2wBnRX9Jb69fMUvE/pub?output=csv"; 
 
 let DATA_CACHE = null; 
 let SETTINGS_DATA = {};
@@ -10,25 +10,17 @@ let RAMPA_MAP = {};
 let ROUTE_LIST = [];
 let LAST_CLOUD_TIME = null;
 
-// ==========================================
-// 1. INICIALIZAÇÃO E AUTOMAÇÕES (TIME & POLLING)
-// ==========================================
-
 window.onload = () => {
     atualizarLinkWMS();
-    carregarMapaTobogas(); // Busca do Sheets
-    sincronizarComBanco(true); // Carga inicial
-    
-    // Polling contínuo (Silencioso a cada 30s)
+    carregarMapaTobogas(); 
+    sincronizarComBanco(true); 
     setInterval(() => sincronizarComBanco(false), 30000);
-    // Verificação de defasagem (a cada 60s)
     setInterval(verificarDefasagem, 60000);
 };
 
-// Gera o link para o dia vigente automaticamente
+
 function atualizarLinkWMS() {
     let now = new Date();
-    // Ajuste de fuso para Brasil
     let tzOffset = now.getTimezoneOffset() * 60000; 
     let localISO = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 10);
     
@@ -38,14 +30,9 @@ function atualizarLinkWMS() {
     if(btn) btn.href = url;
 }
 
-// ==========================================
-// 2. GESTÃO DE DEFASAGEM E ALERTAS
-// ==========================================
-
 function verificarDefasagem() {
     if (!LAST_CLOUD_TIME) return;
-    
-    // Padrão esperado da nuvem: "DD/MM/YYYY HH:MM:SS"
+
     let parts = LAST_CLOUD_TIME.split(/[ \/:]+/);
     if(parts.length < 6) return;
     
@@ -61,16 +48,12 @@ function verificarDefasagem() {
     }
 }
 
-// ==========================================
-// 3. INTEGRAÇÃO GOOGLE SHEETS (TOBOGÃS)
-// ==========================================
 
 function carregarMapaTobogas() {
     fetch(CSV_PLANILHA_TOBOGAS)
     .then(res => res.text())
     .then(csv => {
         let lines = csv.split('\n');
-        // Inicializa o mapa vazio 1-100
         for(let i=1; i<=100; i++) RAMPA_MAP[i] = [];
         
         for(let i=1; i<lines.length; i++) {
@@ -96,15 +79,12 @@ function carregarMapaTobogas() {
                 });
             }
         }
-        // Após carregar a matriz do Sheets, renderizamos a tela
+       
         if(DATA_CACHE) renderMatriz();
     })
     .catch(e => console.error("Erro ao puxar planilhas do Sheets", e));
 }
 
-// ==========================================
-// 4. SINCRONIZAÇÃO GITHUB (CORE)
-// ==========================================
 
 function sincronizarComBanco(manual) {
     if(manual) {
@@ -121,7 +101,7 @@ function sincronizarComBanco(manual) {
         try {
             let content = JSON.parse(data.files["v50_db.json"].content);
             
-            // Regra de Tempo Real: Só atualiza a tela se o horário da nuvem for mais novo
+
             if(content.time !== LAST_CLOUD_TIME) {
                 LAST_CLOUD_TIME = content.time;
                 decodificarNuvem(content.payload);
@@ -147,25 +127,22 @@ function salvarNoBanco() {
     });
 }
 
-// ==========================================
-// 5. INTERFACE UI (ANIMAÇÕES E MODAIS)
-// ==========================================
 
 function mudarAba(abaId) {
-    // Esconde todas as views e tira classe de animação
+ 
     document.querySelectorAll('[id^="view-"]').forEach(el => {
         el.classList.add('hidden');
         el.classList.remove('view-animate');
     });
     
-    // Atualiza botão lateral
+
     document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
     document.getElementById('btn-' + abaId).classList.add('active');
     
-    // Mostra view alvo e engatilha animação reflow
+  
     let view = document.getElementById('view-' + abaId);
     view.classList.remove('hidden');
-    void view.offsetWidth; // Força reflow
+    void view.offsetWidth; 
     view.classList.add('view-animate');
 }
 
@@ -187,5 +164,3 @@ function fecharLoader() {
     document.getElementById('global-loader').style.display = 'none';
 }
 
-// As funções de processarTextoCola(), decodificarNuvem() e codificarParaNuvem() 
-// mantêm a sua lógica robusta de interpretação de texto, apenas chamando `salvarNoBanco()` no final.
